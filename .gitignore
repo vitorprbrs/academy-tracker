@@ -1,0 +1,19 @@
+# Ambiente
+.env
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Banco de dados
+*.db
+*.db-shm
+*.db-wal
+
+# Build frontend
+frontend/dist/
+frontend/node_modules/
+
+# Build Python
+dist/
+*.egg-info/

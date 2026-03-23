@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 7%;
+    --foreground: 220 40% 90%;
+    --card: 222 30% 12%;
+    --card-foreground: 220 40% 90%;
+    --popover: 222 30% 13%;
+    --popover-foreground: 220 40% 90%;
+    --primary: 232 78% 72%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 28% 16%;
+    --secondary-foreground: 220 25% 65%;
+    --muted: 222 28% 14%;
+    --muted-foreground: 220 18% 44%;
+    --accent: 232 78% 72%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 70%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 28% 20%;
+    --input: 222 28% 16%;
+    --ring: 232 78% 72%;
+    --radius: 0.5rem;
+    --surface: 222 37% 9%;
+    --gold: 46 90% 62%;
+    --emerald: 142 65% 58%;
+    --sky: 198 89% 60%;
+    --red: 0 84% 70%;
+    --orange: 25 95% 60%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground font-sans; -webkit-font-smoothing: antialiased; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 2px; }
+}
+
+.fc {
+  --fc-border-color: hsl(var(--border));
+  --fc-button-bg-color: hsl(var(--card));
+  --fc-button-border-color: hsl(var(--border));
+  --fc-button-hover-bg-color: hsl(var(--secondary));
+  --fc-button-active-bg-color: hsl(var(--primary) / 0.15);
+  --fc-button-active-border-color: hsl(var(--primary));
+  --fc-button-text-color: hsl(var(--foreground));
+  --fc-today-bg-color: hsl(var(--primary) / 0.06);
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: hsl(var(--surface));
+  color: hsl(var(--foreground));
+  font-family: "Plus Jakarta Sans", sans-serif;
+}
+.fc .fc-col-header-cell-cushion,
+.fc .fc-daygrid-day-number { color: hsl(var(--muted-foreground)); font-size: 12px; text-decoration: none; }
+.fc .fc-toolbar-title { font-family: "Syne", sans-serif; font-size: 18px; font-weight: 700; }
+.fc .fc-button { font-family: "Plus Jakarta Sans", sans-serif; font-size: 12px; font-weight: 600; border-radius: 6px; }
+.fc-event { border-radius: 4px !important; cursor: pointer; }
+
+.markdown-output h2 { font-family: "Syne", sans-serif; font-size: 1rem; font-weight: 700; color: hsl(var(--foreground)); margin: 1.25rem 0 0.5rem; border-bottom: 1px solid hsl(var(--border)); padding-bottom: 0.4rem; }
+.markdown-output h3 { font-family: "Syne", sans-serif; font-size: 0.9rem; font-weight: 700; color: hsl(var(--foreground)); margin: 1rem 0 0.4rem; }
+.markdown-output p { color: hsl(var(--muted-foreground)); margin-bottom: 0.65rem; line-height: 1.75; font-size: 13.5px; }
+.markdown-output ul, .markdown-output ol { padding-left: 1.2rem; margin-bottom: 0.65rem; }
+.markdown-output li { color: hsl(var(--muted-foreground)); margin-bottom: 0.25rem; font-size: 13.5px; line-height: 1.6; }
+.markdown-output strong { color: hsl(var(--foreground)); font-weight: 600; }
+.markdown-output code { font-family: "JetBrains Mono", monospace; background: hsl(var(--surface)); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: hsl(var(--primary)); }
+
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+.cursor-blink { display: inline-block; width: 2px; height: 1em; background: hsl(var(--primary)); vertical-align: text-bottom; margin-left: 2px; animation: blink 0.8s infinite; }
