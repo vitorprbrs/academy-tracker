@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { PlusCircle } from "lucide-react"
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip } from "recharts"
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip, Bar, BarChart, XAxis, YAxis, Cell } from "recharts"
 import { gradeColor, STATUS_LABELS, daysUntil, formatDate } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -24,11 +24,22 @@ export default function Dashboard({ subjects, events, navigate, onRefresh }) {
         <Button size="sm" variant="outline" onClick={() => setModalOpen(true)}><PlusCircle className="w-3.5 h-3.5" /> Nova Matéria</Button>
       </div>
 
+      {subjects.length > 0 && (
+        <AutoInsight streamUrl="/api/insights/auto/stream" className="mb-6" />
+      )}
+
       {subjects.length === 0 ? (
         <Card className="mb-6"><CardContent className="py-16 text-center"><div className="text-4xl mb-3">📚</div><p className="text-sm text-muted-foreground">Nenhuma matéria cadastrada ainda.</p></CardContent></Card>
       ) : (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 mb-6">
           {subjects.map(s => <SubjectCard key={s.id} subject={s} onClick={() => navigate("subject", s.id)} />)}
+        </div>
+      )}
+
+      {subjects.length > 0 && (
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <AveragesChart subjects={subjects} />
+          <CompletionCard subjects={subjects} />
         </div>
       )}
 
@@ -49,17 +60,13 @@ export default function Dashboard({ subjects, events, navigate, onRefresh }) {
                     <PolarGrid stroke="hsl(var(--border))" />
                     <PolarAngleAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} />
                     <Radar name="Média" dataKey="média" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} />
-                    <Radar name="Mínimo" dataKey="mínimo" stroke="hsl(var(--destructive)/0.5)" fill="transparent" strokeDasharray="4 3" />
+                    <Radar name="Mínimo" dataKey="mínimo" stroke="hsl(var(--destructive))" strokeOpacity={0.5} fill="transparent" strokeDasharray="4 3" />
                     <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
                   </RadarChart>
                 </ResponsiveContainer>}
           </CardContent>
         </Card>
       </div>
-
-      {subjects.length > 0 && (
-        <AutoInsight streamUrl="/api/insights/auto/stream" />
-      )}
 
       <SubjectModal open={modalOpen} onClose={() => setModalOpen(false)} onSaved={() => { setModalOpen(false); onRefresh() }} />
     </div>
@@ -96,6 +103,96 @@ function SubjectCard({ subject: s, onClick }) {
         <span>Mín: <span className="font-mono font-semibold text-foreground">{s.min_needed?.toFixed(1) ?? "—"}</span></span>
       </div>
     </div>
+  )
+}
+
+function AveragesChart({ subjects }) {
+  const data = subjects.map(s => ({
+    name: s.name.length > 10 ? s.name.slice(0, 9) + "…" : s.name,
+    fullName: s.name,
+    atual: s.current_average,
+    aprovação: s.passing_grade,
+    color: s.color,
+  }))
+
+  const hasAny = data.some(d => d.atual !== null)
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Médias por Matéria</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {!hasAny ? (
+          <p className="text-sm text-muted-foreground/50 py-10 text-center">Nenhuma nota inserida ainda.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={210}>
+            <BarChart data={data} barGap={3} barCategoryGap="28%">
+              <XAxis dataKey="name" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis domain={[0, 10]} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} width={20} />
+              <Tooltip
+                contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
+                labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600, marginBottom: 2 }}
+                itemStyle={{ color: "hsl(var(--foreground))" }}
+                formatter={(value, name) => [value !== null ? value.toFixed(1) : "—", name === "atual" ? "Média Atual" : "Aprovação"]}
+                labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName ?? ""}
+              />
+              <Bar dataKey="aprovação" radius={[4, 4, 0, 0]} maxBarSize={32} fill="hsl(var(--muted-foreground))" fillOpacity={0.18} />
+              <Bar dataKey="atual" radius={[4, 4, 0, 0]} maxBarSize={32}>
+                {data.map((entry, i) => (
+                  <Cell key={i}
+                    fill={entry.atual !== null ? entry.color : "hsl(var(--muted-foreground))"}
+                    fillOpacity={entry.atual !== null ? 1 : 0.12}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+function CompletionCard({ subjects }) {
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Progresso das Avaliações</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3.5 pt-2">
+        {subjects.map(s => {
+          const assessments = s.calc_type === "formula"
+            ? (s.formula_components ?? []).flatMap(c => c.assessments ?? [])
+            : s.assessments ?? []
+          const total = assessments.length
+          const done = assessments.filter(a => a.score !== null).length
+          const pct = total > 0 ? (done / total) * 100 : 0
+          const avg = s.current_average
+          const color = gradeColor(avg, s.passing_grade)
+          return (
+            <div key={s.id}>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[12px] font-medium truncate flex-1 mr-2">{s.name}</span>
+                <div className="flex items-center gap-2 shrink-0">
+                  {avg !== null && (
+                    <span className="font-mono text-[12px] font-semibold" style={{ color }}>{avg.toFixed(1)}</span>
+                  )}
+                  <span className="text-[11px] text-muted-foreground font-mono">{done}/{total}</span>
+                </div>
+              </div>
+              <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${pct}%`, background: s.color }} />
+              </div>
+            </div>
+          )
+        })}
+        {subjects.length === 0 && (
+          <p className="text-sm text-muted-foreground/50 py-6 text-center">Nenhuma matéria cadastrada.</p>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 

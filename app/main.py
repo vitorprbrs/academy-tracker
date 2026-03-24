@@ -11,18 +11,29 @@ from app.routers.subjects import router as subjects_router
 from app.routers.assessments import router as assessments_router, score_router
 from app.routers.events import router as events_router
 from app.routers.insights import router as insights_router
+from app.routers.formula_components import router as formula_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
-    # Migrate: add calc_type column if it doesn't exist (safe no-op if already present)
+
     with engine.connect() as conn:
+        # Migrate: add calc_type to subjects if missing
         try:
             conn.execute(text("ALTER TABLE subjects ADD COLUMN calc_type VARCHAR(10) DEFAULT 'weighted'"))
             conn.commit()
         except Exception:
             pass
+
+        # Migrate: add formula_components table and component_id to assessments
+        # (create_all handles new tables; only need to add columns to existing tables)
+        try:
+            conn.execute(text("ALTER TABLE assessments ADD COLUMN component_id INTEGER REFERENCES formula_components(id)"))
+            conn.commit()
+        except Exception:
+            pass
+
     yield
 
 
@@ -47,6 +58,7 @@ app.include_router(assessments_router, prefix="/api")
 app.include_router(score_router, prefix="/api")
 app.include_router(events_router, prefix="/api")
 app.include_router(insights_router, prefix="/api")
+app.include_router(formula_router, prefix="/api")
 
 
 # ─── Serve Frontend ───────────────────────────────────────────────────────────

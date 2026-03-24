@@ -63,10 +63,10 @@ export default function EventModal({ open, onClose, onSaved, event = null, subje
             </div>
             <div className="space-y-1.5">
               <Label>Matéria (opcional)</Label>
-              <Select value={form.subject_id} onValueChange={v => set("subject_id", v)}>
+              <Select value={form.subject_id || "none"} onValueChange={v => set("subject_id", v === "none" ? "" : v)}>
                 <SelectTrigger><SelectValue placeholder="— Sem matéria —" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">— Sem matéria —</SelectItem>
+                  <SelectItem value="none">— Sem matéria —</SelectItem>
                   {subjects.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
                 </SelectContent>
               </Select>

@@ -21,4 +21,9 @@ export const api = {
   createEvent:      (data)     => req("POST",   "/events", data),
   updateEvent:      (id, data) => req("PUT",    `/events/${id}`, data),
   deleteEvent:      (id)       => req("DELETE", `/events/${id}`),
+  // Formula components
+  createFormulaComponent:    (sid, data)   => req("POST",   `/subjects/${sid}/formula-components`, data),
+  updateFormulaComponent:    (id, data)    => req("PUT",    `/formula-components/${id}`, data),
+  deleteFormulaComponent:    (id)          => req("DELETE", `/formula-components/${id}`),
+  addAssessmentToComponent:  (cid, data)   => req("POST",   `/formula-components/${cid}/assessments`, data),
 }

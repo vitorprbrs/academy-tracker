@@ -13,11 +13,38 @@ from app.ai.agent import stream_insights, stream_subject_insight
 
 router = APIRouter(prefix="/insights", tags=["insights"])
 
+NO_DATA_MSG = (
+    "Ainda não há dados suficientes para gerar insights. "
+    "Insira algumas notas para obter uma análise personalizada."
+)
+
 
 def _auto_provider_model():
     """Selects provider/model from .env settings automatically."""
     return "openai", settings.openai_default_model, settings.openai_api_key
     # return "ollama", settings.ollama_default_model, None
+
+
+def _count_scores(subjects_data: list) -> int:
+    """Returns the total number of entered scores across all subjects."""
+    count = 0
+    for s in subjects_data:
+        for a in s.get("assessments", []):
+            if a.get("score") is not None:
+                count += 1
+        for comp in s.get("formula_components", []):
+            for a in comp.get("assessments", []):
+                if a.get("score") is not None:
+                    count += 1
+    return count
+
+
+def _no_data_response():
+    async def generate():
+        yield f"data: {json.dumps({'text': NO_DATA_MSG})}\n\n"
+        yield "data: [DONE]\n\n"
+    return StreamingResponse(generate(), media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @router.post("/stream")
@@ -54,6 +81,10 @@ async def auto_insight_stream(db: Session = Depends(get_db)):
     events = db.query(CalendarEvent).all()
     subjects_data = [enrich_subject(s).model_dump() for s in subjects]
     events_data = [enrich_event(e).model_dump() for e in events]
+
+    if _count_scores(subjects_data) == 0:
+        return _no_data_response()
+
     provider, model, api_key = _auto_provider_model()
 
     async def generate():
@@ -79,6 +110,10 @@ async def subject_insight_stream(subject_id: int, db: Session = Depends(get_db))
     if not subject:
         raise HTTPException(status_code=404, detail="Matéria não encontrada.")
     subject_data = enrich_subject(subject).model_dump()
+
+    if _count_scores([subject_data]) == 0:
+        return _no_data_response()
+
     provider, model, api_key = _auto_provider_model()
 
     async def generate():

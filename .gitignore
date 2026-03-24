@@ -17,3 +17,5 @@ frontend/node_modules/
 # Build Python
 dist/
 *.egg-info/
+
+.claude

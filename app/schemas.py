@@ -14,11 +14,13 @@ class AssessmentUpdate(BaseModel):
     weight: Optional[float] = Field(default=None, gt=0)
     max_score: Optional[float] = Field(default=None, gt=0)
     score: Optional[float] = None
+    component_id: Optional[int] = None
 
 
 class AssessmentOut(BaseModel):
     id: int
     subject_id: int
+    component_id: Optional[int] = None
     name: str
     weight: float
     max_score: float
@@ -27,6 +29,37 @@ class AssessmentOut(BaseModel):
     model_config = {"from_attributes": True}
 
 
+# ─── Formula Component Schemas ─────────────────────────────────────────────────
+
+class FormulaComponentCreate(BaseModel):
+    variable: str
+    weight: float = Field(gt=0)
+    calc: str = "simple"            # "simple" | "weighted"
+    display_order: int = 0
+    assessments: list[AssessmentCreate] = []
+
+
+class FormulaComponentUpdate(BaseModel):
+    variable: Optional[str] = None
+    weight: Optional[float] = Field(default=None, gt=0)
+    calc: Optional[str] = None
+    display_order: Optional[int] = None
+
+
+class FormulaComponentOut(BaseModel):
+    id: int
+    variable: str
+    weight: float
+    calc: str
+    display_order: int
+    assessments: list[AssessmentOut] = []
+    current_value: Optional[float] = None   # computed average for this component
+
+    model_config = {"from_attributes": True}
+
+
+# ─── Subject Schemas ───────────────────────────────────────────────────────────
+
 class SubjectCreate(BaseModel):
     name: str
     color: str = "#6366f1"
@@ -34,6 +67,7 @@ class SubjectCreate(BaseModel):
     semester: Optional[str] = None
     calc_type: str = "weighted"
     assessments: list[AssessmentCreate] = []
+    formula_components: list[FormulaComponentCreate] = []
 
 
 class SubjectUpdate(BaseModel):
@@ -52,6 +86,8 @@ class SubjectOut(BaseModel):
     semester: Optional[str]
     calc_type: str = "weighted"
     assessments: list[AssessmentOut] = []
+    formula_components: list[FormulaComponentOut] = []
+    formula_string: Optional[str] = None   # "MF = 0,7 × NT + 0,3 × SF"
     current_average: Optional[float] = None
     best_projection: Optional[float] = None
     min_needed: Optional[float] = None
@@ -59,6 +95,8 @@ class SubjectOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
+
+# ─── Event Schemas ─────────────────────────────────────────────────────────────
 
 class EventCreate(BaseModel):
     subject_id: Optional[int] = None
