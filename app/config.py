@@ -6,7 +6,7 @@ ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 
 class Settings(BaseSettings):
     # Database
-    database_url: str = "sqlite:///./academic_tracker.db"
+    database_url: str = "sqlite:///" + str(Path(__file__).resolve().parent.parent / "academic_tracker.db")
 
     # Server
     host: str = "127.0.0.1"

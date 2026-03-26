@@ -129,6 +129,6 @@ class EventOut(BaseModel):
 
 class InsightRequest(BaseModel):
     provider: str = "ollama"          # "ollama" | "openai"
-    model: str = "llama3"
+    model: str = "llama3.2"
     openai_api_key: Optional[str] = None
     focus: Optional[str] = None

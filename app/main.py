@@ -62,11 +62,11 @@ app.include_router(formula_router, prefix="/api")
 
 
 # ─── Serve Frontend ───────────────────────────────────────────────────────────
-frontend_dir = os.path.join(os.path.dirname(__file__), "..", "frontend")
+frontend_dist = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
 
-if os.path.isdir(frontend_dir):
-    app.mount("/static", StaticFiles(directory=frontend_dir), name="static")
+if os.path.isdir(frontend_dist):
+    app.mount("/assets", StaticFiles(directory=os.path.join(frontend_dist, "assets")), name="assets")
 
-    @app.get("/", include_in_schema=False)
-    async def serve_frontend():
-        return FileResponse(os.path.join(frontend_dir, "index.html"))
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def serve_frontend(full_path: str):
+        return FileResponse(os.path.join(frontend_dist, "index.html"))

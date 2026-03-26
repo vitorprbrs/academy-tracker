@@ -21,8 +21,8 @@ NO_DATA_MSG = (
 
 def _auto_provider_model():
     """Selects provider/model from .env settings automatically."""
-    return "openai", settings.openai_default_model, settings.openai_api_key
-    # return "ollama", settings.ollama_default_model, None
+    # return "openai", settings.openai_default_model, settings.openai_api_key
+    return "ollama", settings.ollama_default_model, None
 
 
 def _count_scores(subjects_data: list) -> int:
