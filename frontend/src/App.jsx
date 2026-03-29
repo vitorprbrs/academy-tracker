@@ -5,7 +5,6 @@ import Sidebar from "@/components/Sidebar"
 import Dashboard from "@/pages/Dashboard"
 import SubjectDetail from "@/pages/SubjectDetail"
 import CalendarPage from "@/pages/CalendarPage"
-import InsightsPage from "@/pages/InsightsPage"
 
 export default function App() {
   const [subjects, setSubjects] = useState([])
@@ -53,7 +52,7 @@ export default function App() {
         {view === "dashboard" && <Dashboard subjects={subjects} events={events} navigate={navigate} onRefresh={loadData} />}
         {view === "subject" && activeSubject && <SubjectDetail subject={activeSubject} navigate={navigate} onRefresh={loadData} />}
         {view === "calendar" && <CalendarPage subjects={subjects} events={events} onRefresh={loadData} />}
-        {view === "insights" && <InsightsPage />}
+
       </main>
     </div>
   )

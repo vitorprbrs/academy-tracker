@@ -156,8 +156,64 @@ def update_subject(
     if not subject:
         raise HTTPException(status_code=404, detail="Matéria não encontrada.")
 
+    # Update scalar fields
+    scalar_fields = {"name", "color", "passing_grade", "semester", "calc_type"}
     for field, value in payload.model_dump(exclude_unset=True).items():
-        setattr(subject, field, value)
+        if field in scalar_fields:
+            setattr(subject, field, value)
+
+    calc_type = payload.calc_type or subject.calc_type or "weighted"
+
+    # Replace assessments + formula components when provided
+    if payload.assessments is not None or payload.formula_components is not None:
+        # Preserve existing scores indexed by assessment name (so renames start fresh)
+        existing_scores: dict[str, float | None] = {a.name: a.score for a in subject.assessments}
+        existing_comp_scores: dict[tuple[str, str], float | None] = {
+            (fc.variable, a.name): a.score
+            for fc in subject.formula_components
+            for a in fc.assessments
+        }
+
+        # Delete all existing assessments and formula components
+        for a in list(subject.assessments):
+            db.delete(a)
+        for fc in list(subject.formula_components):
+            for a in list(fc.assessments):
+                db.delete(a)
+            db.delete(fc)
+        db.flush()
+
+        if calc_type == "formula" and payload.formula_components:
+            for fc in payload.formula_components:
+                component = FormulaComponent(
+                    subject_id=subject.id,
+                    variable=fc.variable,
+                    weight=fc.weight,
+                    calc=fc.calc,
+                    display_order=fc.display_order,
+                )
+                db.add(component)
+                db.flush()
+                for a in fc.assessments:
+                    preserved = existing_comp_scores.get((fc.variable, a.name))
+                    db.add(Assessment(
+                        subject_id=subject.id,
+                        component_id=component.id,
+                        name=a.name,
+                        weight=a.weight,
+                        max_score=a.max_score,
+                        score=preserved,
+                    ))
+        elif calc_type != "formula" and payload.assessments:
+            for a in payload.assessments:
+                preserved = existing_scores.get(a.name)
+                db.add(Assessment(
+                    subject_id=subject.id,
+                    name=a.name,
+                    weight=a.weight,
+                    max_score=a.max_score,
+                    score=preserved,
+                ))
 
     db.commit()
     db.refresh(subject)

@@ -76,6 +76,8 @@ class SubjectUpdate(BaseModel):
     passing_grade: Optional[float] = Field(default=None, ge=0)
     semester: Optional[str] = None
     calc_type: Optional[str] = None
+    assessments: Optional[list[AssessmentCreate]] = None
+    formula_components: Optional[list[FormulaComponentCreate]] = None
 
 
 class SubjectOut(BaseModel):

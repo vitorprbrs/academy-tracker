@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { LayoutDashboard, CalendarDays, Sparkles, PlusCircle } from "lucide-react"
+import { LayoutDashboard, CalendarDays, PlusCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -18,9 +18,8 @@ export default function Sidebar({ subjects, view, activeSubjectId, navigate }) {
 
         <nav className="p-3 space-y-1">
           {[
-            { id: "dashboard", label: "Dashboard",   icon: LayoutDashboard },
-            { id: "calendar",  label: "Calendário",  icon: CalendarDays },
-            { id: "insights",  label: "Insights IA", icon: Sparkles },
+            { id: "dashboard", label: "Dashboard",  icon: LayoutDashboard },
+            { id: "calendar",  label: "Calendário", icon: CalendarDays },
           ].map(({ id, label, icon: Icon }) => (
             <button key={id} onClick={() => navigate(id)}
               className={cn("w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-all text-left",

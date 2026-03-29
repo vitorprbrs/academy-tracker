@@ -15,9 +15,7 @@ Regras:
 - Seja direto, conciso e útil — sem floreios desnecessários.
 - Use dados reais fornecidos para embasar suas análises.
 - Quando houver provas próximas, destaque a urgência de forma clara.
-- Sugira estratégias de estudo concretas, não genéricas.
 - Celebre pontos positivos, mas não ignore problemas reais.
-- Use emojis com moderação para tornar a leitura mais agradável.
 - Formate a resposta em seções claras com Markdown.
 """
 
@@ -37,11 +35,11 @@ Hoje é {today}.
 {focus_instruction}
 
 Por favor, forneça:
-1. **📊 Panorama Geral** — resumo rápido do desempenho global
-2. **⚠️ Atenção Urgente** — matérias ou situações que precisam de ação imediata
-3. **📅 Planejamento** — sugestões de prioridade considerando as datas
-4. **💡 Dicas Práticas** — estratégias específicas para as matérias mais críticas
-5. **✅ Pontos Positivos** — o que está indo bem e merece reconhecimento
+1. **📊 Ranking de Matérias** — classifique as matérias da melhor para a pior performance, indicando o status de aprovação de cada uma
+2. **🎯 Projeção de Aprovação** — para cada matéria, analise se o aluno conseguirá atingir a nota mínima; use a média atual e a melhor projeção (com máximo nas pendentes) para estimar as chances reais
+3. **🔥 Foco Imediato** — indique quais 1-3 matérias precisam de atenção urgente agora e o motivo específico (nota baixa, projeção ruim, prova próxima)
+4. **📅 Próximos Passos** — sugestões práticas e objetivas considerando os eventos no calendário
+5. **✅ Destaques Positivos** — reconheça brevemente o que está indo bem
 """
 
 
@@ -129,25 +127,72 @@ def _get_llm(provider: str, model: str, openai_api_key: str | None):
         key = openai_api_key or settings.openai_api_key
         if not key:
             raise ValueError("Chave da API OpenAI não fornecida.")
-        return ChatOpenAI(model=model, api_key=key, temperature=0.6, streaming=True)
+        return ChatOpenAI(model=model, api_key=key, temperature=0.6)
     else:
         from langchain_ollama import ChatOllama
-        return ChatOllama(model=model, base_url=settings.ollama_base_url, temperature=0.6, streaming=True)
+        return ChatOllama(model=model, base_url=settings.ollama_base_url, temperature=0.6)
 
 
 async def stream_insights(
     subjects: list[dict],
     events: list[dict],
     provider: str = "ollama",
-    model: str = "llama3",
+    model: str | None = None,
     openai_api_key: str | None = None,
     focus: str | None = None,
 ) -> AsyncIterator[str]:
-    llm = _get_llm(provider, model, openai_api_key)
+    resolved_model = model or (settings.ollama_default_model if provider == "ollama" else settings.openai_default_model)
+    llm = _get_llm(provider, resolved_model, openai_api_key)
     messages = _build_messages(subjects, events, focus)
     async for chunk in llm.astream(messages):
-        if chunk.content:
-            yield chunk.content
+        content = chunk.content
+        if content and isinstance(content, str):
+            yield content
+
+
+async def stream_insights_auto(
+    subjects: list[dict],
+    events: list[dict],
+    focus: str | None = None,
+    openai_api_key: str | None = None,
+):
+    """Dashboard auto-insight: OpenAI (gpt-5-mini) first → Ollama (local) fallback."""
+    messages = _build_messages(subjects, events, focus)
+
+    # Try OpenAI (paid) first
+    key = openai_api_key or settings.openai_api_key
+    if key:
+        openai_yielded = False
+        try:
+            llm = _get_llm("openai", settings.openai_default_model, key)
+            async for chunk in llm.astream(messages):
+                content = chunk.content
+                if content and isinstance(content, str):
+                    openai_yielded = True
+                    yield content
+            return  # OpenAI succeeded
+        except Exception:
+            if openai_yielded:
+                return  # Partial content already sent
+
+    # Fallback to Ollama (local/free)
+    ollama_yielded = False
+    try:
+        llm = _get_llm("ollama", settings.ollama_default_model, None)
+        async for chunk in llm.astream(messages):
+            content = chunk.content
+            if content and isinstance(content, str):
+                ollama_yielded = True
+                yield content
+        return
+    except Exception:
+        if ollama_yielded:
+            return
+
+    raise ValueError(
+        "Nenhum modelo disponível. Configure OPENAI_API_KEY no .env "
+        "ou inicie o Ollama com 'ollama serve'."
+    )
 
 
 # ─── Subject-Specific Insight ─────────────────────────────────────────────────
@@ -171,19 +216,72 @@ Hoje é {today}.
 {assessments}
 
 Forneça uma análise focada com:
-1. **📊 Situação Atual** — diagnóstico direto do desempenho nesta matéria
-2. **🎯 Chances de Aprovação** — estimativa realista com base nos números
-3. **💡 O Que Fazer Agora** — 2-3 ações concretas e específicas
-4. **⚡ Alertas** — pontos críticos que exigem atenção imediata (omita se não houver)
+1. **📊 Situação Atual** — diagnóstico direto: média atual vs. nota mínima, e se o aluno está aprovado, em risco ou reprovado
+2. **🎯 Projeção de Aprovação** — com base na melhor projeção e no mínimo necessário, diga se é possível passar e quais notas precisam ser atingidas nas avaliações pendentes
+3. **💡 O Que Fazer Agora** — 2-3 ações concretas e específicas para melhorar o desempenho nesta matéria
+4. **⚡ Alertas** — pontos críticos que exigem atenção imediata (omita a seção se não houver)
 """
 
 
 async def stream_subject_insight(
     subject: dict,
     provider: str = "ollama",
-    model: str = "llama3",
+    model: str | None = None,
     openai_api_key: str | None = None,
 ) -> AsyncIterator[str]:
+    resolved_model = model or (settings.ollama_default_model if provider == "ollama" else settings.openai_default_model)
+    messages = _build_subject_messages(subject)
+    llm = _get_llm(provider, resolved_model, openai_api_key)
+    async for chunk in llm.astream(messages):
+        c = chunk.content
+        if c and isinstance(c, str):
+            yield c
+
+
+async def stream_subject_insight_auto(
+    subject: dict,
+    openai_api_key: str | None = None,
+):
+    """Subject-specific auto-insight: OpenAI (gpt-5-mini) first → Ollama fallback."""
+    messages = _build_subject_messages(subject)
+
+    # Try OpenAI (paid) first
+    key = openai_api_key or settings.openai_api_key
+    if key:
+        openai_yielded = False
+        try:
+            llm = _get_llm("openai", settings.openai_default_model, key)
+            async for chunk in llm.astream(messages):
+                content = chunk.content
+                if content and isinstance(content, str):
+                    openai_yielded = True
+                    yield content
+            return
+        except Exception:
+            if openai_yielded:
+                return
+
+    # Fallback to Ollama (local/free)
+    ollama_yielded = False
+    try:
+        llm = _get_llm("ollama", settings.ollama_default_model, None)
+        async for chunk in llm.astream(messages):
+            content = chunk.content
+            if content and isinstance(content, str):
+                ollama_yielded = True
+                yield content
+        return
+    except Exception:
+        if ollama_yielded:
+            return
+
+    raise ValueError(
+        "Nenhum modelo disponível. Configure OPENAI_API_KEY no .env "
+        "ou inicie o Ollama com 'ollama serve'."
+    )
+
+
+def _build_subject_messages(subject: dict):
     calc_type = subject.get("calc_type", "weighted")
     calc_label = "Média Simples" if calc_type == "simple" else "Média Ponderada"
 
@@ -208,9 +306,4 @@ async def stream_subject_insight(
         min_needed=f"{needed:.1f}" if needed is not None else "—",
         assessments="\n".join(assessments_lines) if assessments_lines else "Nenhuma avaliação cadastrada.",
     )
-
-    llm = _get_llm(provider, model, openai_api_key)
-    messages = [SystemMessage(content=SUBJECT_SYSTEM_PROMPT), HumanMessage(content=content)]
-    async for chunk in llm.astream(messages):
-        if chunk.content:
-            yield chunk.content
+    return [SystemMessage(content=SUBJECT_SYSTEM_PROMPT), HumanMessage(content=content)]

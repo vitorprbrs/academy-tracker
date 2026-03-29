@@ -14,11 +14,11 @@ class Settings(BaseSettings):
 
     # Ollama
     ollama_base_url: str = "http://localhost:11434"
-    ollama_default_model: str = "llama3"
+    ollama_default_model: str = "llama3.2:latest"
 
     # OpenAI
     openai_api_key: str | None = None
-    openai_default_model: str = "gpt-4o"
+    openai_default_model: str = "gpt-5-mini"
 
     model_config = SettingsConfigDict(env_file=str(ENV_FILE), env_file_encoding="utf-8")
 

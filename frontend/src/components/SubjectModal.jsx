@@ -169,7 +169,7 @@ export default function SubjectModal({ open, onClose, onSaved, subject = null })
                 <div className="flex items-center justify-between">
                   <Label>Componentes da Fórmula</Label>
                   <Button type="button" variant="ghost" size="sm" className="h-6 text-xs"
-                    onClick={() => setComponents(cs => [...cs, { ...EMPTY_COMP, assessments: [{ name: "", max_score: "10" }] }])}>
+                    onClick={() => setComponents(cs => [...cs, { ...EMPTY_COMP, assessments: [{ name: "", weight: "1", max_score: "10" }] }])}>
                     <Plus className="w-3 h-3" /> Adicionar
                   </Button>
                 </div>
@@ -264,13 +264,13 @@ export default function SubjectModal({ open, onClose, onSaved, subject = null })
                 </div>
                 {rows.length > 0 && (
                   <div className="space-y-2">
-                    <div className={cn("grid gap-2 px-1", isSimple ? "grid-cols-[1fr_56px_28px]" : "grid-cols-[1fr_56px_56px_28px]")}>
+                    <div className={cn("grid gap-2 px-1", isSimple ? "grid-cols-[1fr_64px_28px]" : "grid-cols-[1fr_72px_64px_28px]")}>
                       {(isSimple ? ["Nome","Máx",""] : ["Nome","Peso","Máx",""]).map(h => (
                         <span key={h} className="text-[10px] text-muted-foreground/60">{h}</span>
                       ))}
                     </div>
                     {rows.map((row, i) => (
-                      <div key={i} className={cn("grid gap-2 items-center", isSimple ? "grid-cols-[1fr_56px_28px]" : "grid-cols-[1fr_56px_56px_28px]")}>
+                      <div key={i} className={cn("grid gap-2 items-center", isSimple ? "grid-cols-[1fr_64px_28px]" : "grid-cols-[1fr_72px_64px_28px]")}>
                         <Input className="h-8 text-xs" placeholder="Prova 1" value={row.name} onChange={e => setRow(i,"name",e.target.value)} />
                         {!isSimple && (
                           <Input className="h-8 text-xs font-mono" type="number" min="0.1" step="0.1" value={row.weight} onChange={e => setRow(i,"weight",e.target.value)} />
