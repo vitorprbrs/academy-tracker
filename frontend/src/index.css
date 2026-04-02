@@ -15,7 +15,7 @@
     --secondary: 222 28% 16%;
     --secondary-foreground: 220 25% 65%;
     --muted: 222 28% 14%;
-    --muted-foreground: 220 18% 44%;
+    --muted-foreground: 220 22% 72%;
     --accent: 232 78% 72%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 70%;
@@ -61,13 +61,46 @@
 .fc .fc-button { font-family: "Plus Jakarta Sans", sans-serif; font-size: 12px; font-weight: 600; border-radius: 6px; }
 .fc-event { border-radius: 4px !important; cursor: pointer; }
 
-.markdown-output h2 { font-family: "Syne", sans-serif; font-size: 1rem; font-weight: 700; color: hsl(var(--foreground)); margin: 1.25rem 0 0.5rem; border-bottom: 1px solid hsl(var(--border)); padding-bottom: 0.4rem; }
-.markdown-output h3 { font-family: "Syne", sans-serif; font-size: 0.9rem; font-weight: 700; color: hsl(var(--foreground)); margin: 1rem 0 0.4rem; }
-.markdown-output p { color: hsl(var(--muted-foreground)); margin-bottom: 0.65rem; line-height: 1.75; font-size: 13.5px; }
+.markdown-output h2 { font-family: "Syne", sans-serif; font-size: 1rem; font-weight: 700; color: hsl(var(--primary-foreground)); margin: 1.25rem 0 0.5rem; border-bottom: 1px solid hsl(var(--border)); padding-bottom: 0.4rem; }
+.markdown-output h3 { font-family: "Syne", sans-serif; font-size: 0.9rem; font-weight: 700; color: hsl(var(--primary-foreground)); margin: 1rem 0 0.4rem; }
+.markdown-output p { color: hsl(var(--primary-foreground)); margin-bottom: 0.65rem; line-height: 1.75; font-size: 13.5px; }
 .markdown-output ul, .markdown-output ol { padding-left: 1.2rem; margin-bottom: 0.65rem; }
-.markdown-output li { color: hsl(var(--muted-foreground)); margin-bottom: 0.25rem; font-size: 13.5px; line-height: 1.6; }
-.markdown-output strong { color: hsl(var(--foreground)); font-weight: 600; }
-.markdown-output code { font-family: "JetBrains Mono", monospace; background: hsl(var(--surface)); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: hsl(var(--primary)); }
+.markdown-output li { color: hsl(var(--primary-foreground)); margin-bottom: 0.25rem; font-size: 13.5px; line-height: 1.6; }
+.markdown-output strong { color: hsl(var(--primary-foreground)); font-weight: 600; }
+.markdown-output code { font-family: "JetBrains Mono", monospace; background: hsl(var(--surface)); padding: 1px 6px; border-radius: 4px; font-size: 12px; color: hsl(var(--primary-foreground)); }
 
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 .cursor-blink { display: inline-block; width: 2px; height: 1em; background: hsl(var(--primary)); vertical-align: text-bottom; margin-left: 2px; animation: blink 0.8s infinite; }
+
+@keyframes insightRail {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes insightDotPulse {
+  0%, 100% { opacity: 0.5; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.insight-loading-rail {
+  height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, hsl(var(--primary) / 0.2), hsl(var(--primary)), hsl(var(--sky)), hsl(var(--primary) / 0.2));
+  background-size: 200% 100%;
+  animation: insightRail 1.35s linear infinite;
+}
+
+.insight-loading-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: hsl(var(--primary));
+  animation: insightDotPulse 1s ease-in-out infinite;
+}
+
+.insight-loading-overlay {
+  background: linear-gradient(120deg, transparent 0%, hsl(var(--primary) / 0.06) 45%, hsl(var(--sky) / 0.07) 50%, hsl(var(--primary) / 0.06) 55%, transparent 100%);
+  background-size: 250% 100%;
+  animation: insightRail 1.6s linear infinite;
+  border-radius: 0 0 calc(var(--radius) - 2px) calc(var(--radius) - 2px);
+}

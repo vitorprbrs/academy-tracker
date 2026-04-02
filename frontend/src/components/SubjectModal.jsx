@@ -301,10 +301,10 @@ function CalcBtn({ active, onClick, label, desc }) {
   return (
     <button type="button" onClick={onClick} className={cn(
       "flex-1 flex flex-col items-start px-3 py-2 rounded-lg border text-left transition-all duration-150",
-      active ? "border-primary bg-primary/10" : "border-border text-muted-foreground hover:text-foreground"
+      active ? "border-primary bg-primary/10" : "border-border text-foreground/80 hover:text-foreground"
     )}>
       <span className={cn("text-xs font-semibold", active && "text-primary")}>{label}</span>
-      <span className="text-[10px] text-muted-foreground/60 mt-0.5">{desc}</span>
+      <span className="text-[10px] text-foreground/65 mt-0.5">{desc}</span>
     </button>
   )
 }

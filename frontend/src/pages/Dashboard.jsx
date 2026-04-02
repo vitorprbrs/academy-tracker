@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { PlusCircle } from "lucide-react"
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip, Bar, BarChart, XAxis, YAxis, Cell } from "recharts"
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip, Bar, BarChart, XAxis, YAxis, Cell, LineChart, Line, CartesianGrid, Legend, ReferenceLine } from "recharts"
 import { gradeColor, STATUS_LABELS, daysUntil, formatDate } from "@/lib/utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -43,6 +43,12 @@ export default function Dashboard({ subjects, events, navigate, onRefresh }) {
         </div>
       )}
 
+      {subjects.length > 0 && (
+        <div className="mb-4">
+          <TrendLinesChart subjects={subjects} />
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-4 mb-4">
         <Card>
           <CardHeader className="pb-3"><CardTitle className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Próximos Eventos</CardTitle></CardHeader>
@@ -70,6 +76,92 @@ export default function Dashboard({ subjects, events, navigate, onRefresh }) {
 
       <SubjectModal open={modalOpen} onClose={() => setModalOpen(false)} onSaved={() => { setModalOpen(false); onRefresh() }} />
     </div>
+  )
+}
+
+function TrendLinesChart({ subjects }) {
+  const seriesBySubject = subjects.map(s => {
+    const assessments = s.calc_type === "formula"
+      ? (s.formula_components ?? []).flatMap(c => c.assessments ?? [])
+      : s.assessments ?? []
+    const points = assessments
+      .filter(a => a.score !== null)
+      .map(a => Number(a.score))
+    return {
+      id: `subject_${s.id}`,
+      name: s.name,
+      color: s.color || "hsl(var(--primary))",
+      points,
+    }
+  })
+
+  const maxLen = seriesBySubject.reduce((acc, item) => Math.max(acc, item.points.length), 0)
+  const passingAvg = subjects.length > 0
+    ? subjects.reduce((sum, s) => sum + (Number(s.passing_grade) || 0), 0) / subjects.length
+    : 6
+
+  if (maxLen === 0) {
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            Tendência de Notas
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground/60 py-8 text-center">
+            Lance notas para visualizar a evolução por matéria.
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const chartData = Array.from({ length: maxLen }, (_, idx) => {
+    const row = { step: `A${idx + 1}` }
+    for (const s of seriesBySubject) row[s.id] = s.points[idx] ?? null
+    return row
+  })
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Tendência de Notas
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={260}>
+          <LineChart data={chartData} margin={{ top: 8, right: 16, left: 6, bottom: 4 }}>
+            <CartesianGrid stroke="hsl(var(--border))" strokeOpacity={0.5} vertical={false} />
+            <XAxis dataKey="step" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} axisLine={false} tickLine={false} />
+            <YAxis domain={[0, 10]} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10, fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} width={24} />
+            <ReferenceLine y={passingAvg} stroke="hsl(var(--destructive))" strokeOpacity={0.35} strokeDasharray="4 3" />
+            <Tooltip
+              contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12, color: "hsl(var(--foreground))" }}
+              labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600, marginBottom: 2 }}
+              itemStyle={{ color: "hsl(var(--foreground))" }}
+              formatter={(value, name) => [value != null ? Number(value).toFixed(1) : "—", name]}
+              labelFormatter={(label) => `Avaliação ${String(label).replace("A", "")}`}
+            />
+            <Legend wrapperStyle={{ fontSize: 11, color: "hsl(var(--foreground))" }} />
+            {seriesBySubject.map(s => (
+              <Line
+                key={s.id}
+                type="monotone"
+                dataKey={s.id}
+                name={s.name}
+                stroke={s.color}
+                strokeWidth={2}
+                dot={{ r: 2 }}
+                connectNulls={false}
+                isAnimationActive={true}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
   )
 }
 

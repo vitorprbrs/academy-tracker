@@ -13,7 +13,7 @@ export default function Sidebar({ subjects, view, activeSubjectId, navigate }) {
       <aside className="w-[230px] flex-shrink-0 border-r border-border bg-surface flex flex-col overflow-hidden">
         <div className="px-5 py-5 border-b border-border">
           <div className="font-display font-extrabold text-[17px] tracking-tight">⬡ Academic</div>
-          <div className="text-[11px] text-muted-foreground mt-0.5 font-light">seu desempenho em foco</div>
+          <div className="text-[11px] text-foreground/75 mt-0.5 font-light">seu desempenho em foco</div>
         </div>
 
         <nav className="p-3 space-y-1">
@@ -23,7 +23,7 @@ export default function Sidebar({ subjects, view, activeSubjectId, navigate }) {
           ].map(({ id, label, icon: Icon }) => (
             <button key={id} onClick={() => navigate(id)}
               className={cn("w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-[13px] font-medium transition-all text-left",
-                view === id && id !== "subject" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                view === id && id !== "subject" ? "bg-primary/10 text-primary" : "text-foreground/85 hover:bg-secondary hover:text-foreground"
               )}>
               <Icon className="w-4 h-4 shrink-0" />{label}
             </button>
@@ -33,13 +33,13 @@ export default function Sidebar({ subjects, view, activeSubjectId, navigate }) {
         <Separator />
 
         <div className="flex-1 overflow-y-auto p-3">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 px-2 mb-2">Matérias</p>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-foreground/70 px-2 mb-2">Matérias</p>
           {subjects.length === 0
-            ? <p className="text-[11px] text-muted-foreground/40 px-2">Nenhuma matéria</p>
+            ? <p className="text-[11px] text-foreground/60 px-2">Nenhuma matéria</p>
             : subjects.map(s => (
                 <button key={s.id} onClick={() => navigate("subject", s.id)}
                   className={cn("w-full flex items-center gap-2 px-2.5 py-2 rounded-md text-[12.5px] transition-all text-left truncate",
-                    view === "subject" && activeSubjectId === s.id ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    view === "subject" && activeSubjectId === s.id ? "bg-secondary text-foreground" : "text-foreground/80 hover:bg-secondary hover:text-foreground"
                   )}>
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ background: s.color }} />
                   <span className="truncate">{s.name}</span>
